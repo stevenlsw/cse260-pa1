@@ -11,10 +11,10 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 #if !defined(BLOCK_SIZE)
 #define L1_BLOCK_SIZE 37
 #define L2_BLOCK_SIZE 105
-#define L3_BLOCk_SIZE 1145
+#define L3_BLOCK_SIZE 1145
 // #define BLOCK_SIZE 719
 #endif
-
+:square_dgemm
 #define min(a,b) (((a)<(b))?(a):(b))
 
 /* This auxiliary subroutine performs a smaller dgemm operation
@@ -43,11 +43,11 @@ static void do_block_l1 (int M, int N, int K, double* A, double* B, double* C)
 static void do_block_l2 (int M, int N, int K, double* A, double* B, double* C)
 {
     /* For each block-row of A */
-      for (int i = 0; i < L2_BLOCK_SIZE; i += L1_BLOCK_SIZE)
+      for (int i = 0; i < M; i += L1_BLOCK_SIZE)
         /* For each block-column of B */
-        for (int j = 0; j < L2_BLOCK_SIZE; j += L1_BLOCK_SIZE)
+        for (int j = 0; j < N; j += L1_BLOCK_SIZE)
           /* Accumulate block dgemms into block of C */
-          for (int k = 0; k < L2_BLOCK_SIZE; k += L1_BLOCK_SIZE)
+          for (int k = 0; k < K; k += L1_BLOCK_SIZE)
           {
         /* Correct block dimensions if block "goes off edge of" the matrix */
         int M = min (L1_BLOCK_SIZE, L2_BLOCK_SIZE-i);
@@ -66,11 +66,11 @@ static void do_block_l2 (int M, int N, int K, double* A, double* B, double* C)
 static void do_block_l3 (int lda, int M, int N, int K, double* A, double* B, double* C)
 {
     /* For each block-row of A */
-    for (int i = 0; i < L3_BLOCK_SIZE; i += L2_BLOCK_SIZE)
+    for (int i = 0; i < M; i += L2_BLOCK_SIZE)
       /* For each block-column of B */
-      for (int j = 0; j < L3_BLOCK_SIZE; j += L2_BLOCK_SIZE)
+      for (int j = 0; j < N; j += L2_BLOCK_SIZE)
         /* Accumulate block dgemms into block of C */
-        for (int k = 0; k < L3_BLOCK_SIZE; k += L2_BLOCK_SIZE)
+        for (int k = 0; k < K; k += L2_BLOCK_SIZE)
         {
       /* Correct block dimensions if block "goes off edge of" the matrix */
       int M = min (L2_BLOCK_SIZE, L3_BLOCK_SIZE-i);
