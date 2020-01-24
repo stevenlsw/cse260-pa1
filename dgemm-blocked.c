@@ -26,7 +26,7 @@ static void do_block_l1 (int M_L1, int N_L1, int K_L1, double* A, double* B, dou
   /* For each row i of A */
     for (int i = 0; i < M_L1; ++i)
       /* For each column j of B */
-      for (int j = 0; j < N_l1; ++j)
+      for (int j = 0; j < N_L1; ++j)
       {
         /* Compute C(i,j) */
         double cij = C[i*L1_BLOCK_SIZE+j];
@@ -50,9 +50,9 @@ static void do_block_l2 (int M_L2, int N_L2, int K_L2, double* A, double* B, dou
           for (int k = 0; k < K_L2; k += L1_BLOCK_SIZE)
           {
         /* Correct block dimensions if block "goes off edge of" the matrix */
-        int M_L1 = min (L1_BLOCK_SIZE, L2_BLOCK_SIZE-i);
-        int N_L1 = min (L1_BLOCK_SIZE, L2_BLOCK_SIZE-j);
-        int K_L1 = min (L1_BLOCK_SIZE, L2_BLOCK_SIZE-k);
+        int M_L1 = min (L1_BLOCK_SIZE, M_L2-i);
+        int N_L1 = min (L1_BLOCK_SIZE, N_L2-j);
+        int K_L1 = min (L1_BLOCK_SIZE, K_L2-k);
 
         /* Perform individual block dgemm */
     #ifdef TRANSPOSE
@@ -73,9 +73,9 @@ static void do_block_l3 (int M_L3, int N_L3, int K_L3, double* A, double* B, dou
         for (int k = 0; k < K_L3; k += L2_BLOCK_SIZE)
         {
       /* Correct block dimensions if block "goes off edge of" the matrix */
-      int M_L2 = min (L2_BLOCK_SIZE, L3_BLOCK_SIZE-i);
-      int N_L2 = min (L2_BLOCK_SIZE, L3_BLOCK_SIZE-j);
-      int K_L2 = min (L2_BLOCK_SIZE, L3_BLOCK_SIZE-k);
+      int M_L2 = min (L2_BLOCK_SIZE, M_L3-i);
+      int N_L2 = min (L2_BLOCK_SIZE, N_L3-j);
+      int K_L2 = min (L2_BLOCK_SIZE, K_L3-k);
 
       /* Perform individual block dgemm */
   #ifdef TRANSPOSE
