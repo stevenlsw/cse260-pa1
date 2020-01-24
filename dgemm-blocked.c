@@ -9,7 +9,9 @@
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #if !defined(BLOCK_SIZE)
-#define BLOCK_SIZE 37
+#define L1_BLOCK_SIZE 37
+#define L2_BLOCK_SIZE 105
+#define L3_BLOCk_SIZE 1145
 // #define BLOCK_SIZE 719
 #endif
 
@@ -18,23 +20,70 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 /* This auxiliary subroutine performs a smaller dgemm operation
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N. */
-static void do_block (int lda, int M, int N, int K, double* A, double* B, double* C)
+
+static void do_block_l1 (int M, int N, int K, double* A, double* B, double* C)
 {
   /* For each row i of A */
-  for (int i = 0; i < M; ++i)
-    /* For each column j of B */ 
-    for (int j = 0; j < N; ++j) 
-    {
-      /* Compute C(i,j) */
-      double cij = C[i*lda+j];
-      for (int k = 0; k < K; ++k)
-#ifdef TRANSPOSE
-	cij += A[i*lda+k] * B[j*lda+k];
-#else
-	cij += A[i*lda+k] * B[k*lda+j];
-#endif
-      C[i*lda+j] = cij;
-    }
+    for (int i = 0; i < M; ++i)
+      /* For each column j of B */
+      for (int j = 0; j < N; ++j)
+      {
+        /* Compute C(i,j) */
+        double cij = C[i*L1_BLOCK_SIZE+j];
+        for (int k = 0; k < K; ++k)
+  #ifdef TRANSPOSE
+      cij += A[i*L1_BLOCK_SIZE+k] * B[j*L1_BLOCK_SIZE+k];
+  #else
+      cij += A[i*L1_BLOCK_SIZE+k] * B[k*L1_BLOCK_SIZE+j];
+  #endif
+        C[i*L1_BLOCK_SIZE+j] = cij;
+      }
+}
+
+static void do_block_l2 (int M, int N, int K, double* A, double* B, double* C)
+{
+    /* For each block-row of A */
+      for (int i = 0; i < L2_BLOCK_SIZE; i += L1_BLOCk_SIZE)
+        /* For each block-column of B */
+        for (int j = 0; j < L2_BLOCK_SIZE; j += L1_BLOCK_SIZE)
+          /* Accumulate block dgemms into block of C */
+          for (int k = 0; k < L2_BLOCK_SIZE; k += L1_BLOCK_SIZE)
+          {
+        /* Correct block dimensions if block "goes off edge of" the matrix */
+        int M = min (L1_BLOCK_SIZE, L2_BLOCK_SIZE-i);
+        int N = min (L1_BLOCK_SIZE, L2_BLOCK_SIZE-j);
+        int K = min (L1_BLOCK_SIZE, L2_BLOCK_SIZE-k);
+
+        /* Perform individual block dgemm */
+    #ifdef TRANSPOSE
+        do_block_l1(M, N, K, A + i*L2_BLOCk_SIZE + k, B + j*L2_BLOCk_SIZE + k, C + i*L2_BLOCk_SIZE + j);
+    #else
+        do_block_l1(M, N, K, A + i*L2_BLOCk_SIZE + k, B + k*L2_BLOCk_SIZE + j, C + i*L2_BLOCk_SIZE + j);
+    #endif
+          }
+}
+
+static void do_block_l3 (int lda, int M, int N, int K, double* A, double* B, double* C)
+{
+    /* For each block-row of A */
+    for (int i = 0; i < L3_BLOCk_SIZE; i += L2_BLOCk_SIZE)
+      /* For each block-column of B */
+      for (int j = 0; j < L3_BLOCk_SIZE; j += L2_BLOCK_SIZE)
+        /* Accumulate block dgemms into block of C */
+        for (int k = 0; k < L3_BLOCk_SIZE; k += L2_BLOCK_SIZE)
+        {
+      /* Correct block dimensions if block "goes off edge of" the matrix */
+      int M = min (L2_BLOCK_SIZE, L3_BLOCk_SIZE-i);
+      int N = min (L2_BLOCK_SIZE, L3_BLOCk_SIZE-j);
+      int K = min (L2_BLOCK_SIZE, L3_BLOCk_SIZE-k);
+
+      /* Perform individual block dgemm */
+  #ifdef TRANSPOSE
+      do_block_l2(M, N, K, A + i*L3_BLOCK_SIZE + k, B + j*L3_BLOCK_SIZE + k, C + i*L3_BLOCK_SIZE + j);
+  #else
+      do_block_l2(M, N, K, A + i*L3_BLOCK_SIZE + k, B + k*L3_BLOCK_SIZE + j, C + i*L3_BLOCK_SIZE + j);
+  #endif
+        }
 }
 
 /* This routine performs a dgemm operation
@@ -52,22 +101,22 @@ void square_dgemm (int lda, double* A, double* B, double* C)
     }
 #endif
   /* For each block-row of A */ 
-  for (int i = 0; i < lda; i += BLOCK_SIZE)
+  for (int i = 0; i < lda; i += L3_BLOCK_SIZE)
     /* For each block-column of B */
-    for (int j = 0; j < lda; j += BLOCK_SIZE)
+    for (int j = 0; j < lda; j += L3_BLOCK_SIZE)
       /* Accumulate block dgemms into block of C */
-      for (int k = 0; k < lda; k += BLOCK_SIZE)
+      for (int k = 0; k < lda; k += L3_BLOCK_SIZE)
       {
 	/* Correct block dimensions if block "goes off edge of" the matrix */
-	int M = min (BLOCK_SIZE, lda-i);
-	int N = min (BLOCK_SIZE, lda-j);
-	int K = min (BLOCK_SIZE, lda-k);
+	int M = min (L3_BLOCK_SIZE, lda-i);
+	int N = min (L3_BLOCK_SIZE, lda-j);
+	int K = min (L3_BLOCK_SIZE, lda-k);
 
 	/* Perform individual block dgemm */
 #ifdef TRANSPOSE
-	do_block(lda, M, N, K, A + i*lda + k, B + j*lda + k, C + i*lda + j);
+	do_block_l3(lda, M, N, K, A + i*lda + k, B + j*lda + k, C + i*lda + j);
 #else
-	do_block(lda, M, N, K, A + i*lda + k, B + k*lda + j, C + i*lda + j);
+	do_block_l3(lda, M, N, K, A + i*lda + k, B + k*lda + j, C + i*lda + j);
 #endif
       }
 #if TRANSPOSE
