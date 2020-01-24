@@ -58,7 +58,7 @@ static void do_block_l2 (int M_L2, int N_L2, int K_L2, double* A, double* B, dou
     #ifdef TRANSPOSE
         do_block_l1(M_L1, N_L1, K_L1, A + i*L2_BLOCK_SIZE + k, B + j*L2_BLOCK_SIZE + k, C + i*L2_BLOCK_SIZE + j);
     #else
-        do_block_l1(M_L1 N_L1, K_L1, A + i*L2_BLOCK_SIZE + k, B + k*L2_BLOCK_SIZE + j, C + i*L2_BLOCK_SIZE + j);
+        do_block_l1(M_L1, N_L1, K_L1, A + i*L2_BLOCK_SIZE + k, B + k*L2_BLOCK_SIZE + j, C + i*L2_BLOCK_SIZE + j);
     #endif
           }
 }
