@@ -14,7 +14,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 #define L3_BLOCK_SIZE 1145
 // #define BLOCK_SIZE 719
 #endif
-:square_dgemm
+
 #define min(a,b) (((a)<(b))?(a):(b))
 
 /* This auxiliary subroutine performs a smaller dgemm operation
@@ -63,7 +63,7 @@ static void do_block_l2 (int M, int N, int K, double* A, double* B, double* C)
           }
 }
 
-static void do_block_l3 (int lda, int M, int N, int K, double* A, double* B, double* C)
+static void do_block_l3 (int M, int N, int K, double* A, double* B, double* C)
 {
     /* For each block-row of A */
     for (int i = 0; i < M; i += L2_BLOCK_SIZE)
@@ -114,9 +114,9 @@ void square_dgemm (int lda, double* A, double* B, double* C)
 
 	/* Perform individual block dgemm */
 #ifdef TRANSPOSE
-	do_block_l3(lda, M, N, K, A + i*lda + k, B + j*lda + k, C + i*lda + j);
+	do_block_l3(M, N, K, A + i*lda + k, B + j*lda + k, C + i*lda + j);
 #else
-	do_block_l3(lda, M, N, K, A + i*lda + k, B + k*lda + j, C + i*lda + j);
+	do_block_l3(M, N, K, A + i*lda + k, B + k*lda + j, C + i*lda + j);
 #endif
       }
 #if TRANSPOSE
