@@ -5,6 +5,8 @@
  *    Enable user to select one problem size only via the -n option
  *    Support CBLAS interface
  */
+#include <immintrin.h>
+#include <avx2intrin.h>
 
 const char* dgemm_desc = "Simple blocked dgemm.";
 
@@ -12,6 +14,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 #define L1_BLOCK_SIZE 36
 #define L2_BLOCK_SIZE 104
 #define L3_BLOCK_SIZE 1144
+#define AVX_BLOCK_SIZE 4
 // #define BLOCK_SIZE 719
 #endif
 
@@ -24,21 +27,61 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, double* B, double* C)
 {
   /* For each row i of A */
-    for (int i = 0; i < M_L1; ++i)
+    for (int i = 0; i < M_L1; i+=AVX_BLOCK_SIZE)
       /* For each column j of B */
-      for (int j = 0; j < N_L1; ++j)
+      for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE)
       {
-        /* Compute C(i,j) */
-        double cij = C[i*lda+j];
-        for (int k = 0; k < K_L1; ++k)
-  #ifdef TRANSPOSE
-      cij += A[i*lda+k] * B[j*lda+k];
-  #else
-      cij += A[i*lda+k] * B[k*lda+j];
-  #endif
-        C[i*lda+j] = cij;
+                # c: AVX_BLOCK_SIZE * AVX_BLOCK_SIZE
+          register __m256 c00_c01_c02_c03 = _mm256_load_pd(C+i*lda+j);
+          register __m256 c10_c11_c12_c13 = _mm256_load_pd(C+(i+1)*lda+j);
+          register __m256 c20_c21_c22_c23 = _mm256_load_pd(C+(i+2)*lda+j);
+          register __m256 c30_c31_c32_c33 = _mm256_load_pd(C+(i+3)*lda+j);
+          for (int k = 0; k < K_L1; K+=4)
+                    # 4 here 256/sizeof(double)/8=4
+          {
+                
+                #ifdef TRANSPOSE
+                     # cij += A[i*lda+k] * B[j*lda+k];
+              for (int jj=0; jj<AVX_BLOCK_SIZE;jj++)
+              {
+                  register __m256 a0x = _mm256_broadcast_sd(A+i*lda+k+jj)
+                  register __m256 a1x = _mm256_broadcast_sd(A+(i+1)*lda+k+jj)
+                  register __m256 a2x = _mm256_broadcast_sd(A+(i+2)*lda+k+jj)
+                  register __m256 a3x = _mm256_broadcast_sd(A+(i+3)*lda+k+jj)
+                  
+                  register __m256 b = _mm256_broadcast_sd(B+(j+jj)*lda+k)
+                  
+                  c00_c01_c02_c03 = _mm256_fmadd_pd(a0x, b, c00_c01_c02_c03)
+                  c10_c11_c12_c13 = _mm256_fmadd_pd(a1x, b, c10_c11_c12_c13)
+                  c20_c21_c22_c23 = _mm256_fmadd_pd(a2x, b, c20_c21_c22_c23)
+                  c30_c31_c32_c33 = _mm256_fmadd_pd(a3x, b, c30_c31_c32_c33)
+                  
+              }
+                    #else
+              for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
+              {
+                  register __m256 a0x = _mm256_broadcast_sd(A+i*lda+k+kk)
+                  register __m256 a1x = _mm256_broadcast_sd(A+(i+1)*lda+k+kk)
+                  register __m256 a2x = _mm256_broadcast_sd(A+(i+2)*lda+k+kk)
+                  register __m256 a3x = _mm256_broadcast_sd(A+(i+3)*lda+k+kk)
+                  
+                  register __m256 b = _mm256_broadcast_sd(B+(k+kk)*lda+j)
+                  
+                  c00_c01_c02_c03 = _mm256_fmadd_pd(a0x, b, c00_c01_c02_c03)
+                  c10_c11_c12_c13 = _mm256_fmadd_pd(a1x, b, c10_c11_c12_c13)
+                  c20_c21_c22_c23 = _mm256_fmadd_pd(a2x, b, c20_c21_c22_c23)
+                  c30_c31_c32_c33 = _mm256_fmadd_pd(a3x, b, c30_c31_c32_c33)
+                  
+              }
+              #endif
+          }
+          
+      __mm256_storeu_pd(C+i*lda+j, c00_c01_c02_c03)
+      __mm256_storeu_pd(C+(i+1)*lda+j, c10_c11_c12_c13)
+      __mm256_storeu_pd(C+(i+2)*lda+j, c20_c21_c22_c23)
+      __mm256_storeu_pd(C+(i+3)*lda+j, c30_c31_c32_c33)
+          
       }
-}
 
 static void do_block_l2 (int lda, int M_L2, int N_L2, int K_L2, double* A, double* B, double* C)
 {
