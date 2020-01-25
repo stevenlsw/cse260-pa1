@@ -75,10 +75,10 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
               #endif
           }
           
-          __mm256_storeu_pd(C+i*lda+j, c00_c01_c02_c03);
-          __mm256_storeu_pd(C+(i+1)*lda+j, c10_c11_c12_c13);
-          __mm256_storeu_pd(C+(i+2)*lda+j, c20_c21_c22_c23);
-          __mm256_storeu_pd(C+(i+3)*lda+j, c30_c31_c32_c33);
+          _mm256_storeu_pd(C+i*lda+j, c00_c01_c02_c03);
+          _mm256_storeu_pd(C+(i+1)*lda+j, c10_c11_c12_c13);
+          _mm256_storeu_pd(C+(i+2)*lda+j, c20_c21_c22_c23);
+          _mm256_storeu_pd(C+(i+3)*lda+j, c30_c31_c32_c33);
           
       }
 }
