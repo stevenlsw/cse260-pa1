@@ -34,15 +34,15 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
     /* Matrix padding and buffering */
     for (int i = 0; i < M_L1; ++i)
         for (int k = 0; k < K_L1; ++k)
-            buffer_A[i*K_L1+k] = A[i*lda+k];
+            buffer_A[i*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k] = A[i*lda+k];
             
     for (int k = 0; k < K_L1; ++k)
         for (int j = 0; j < N_L1; ++j)
         {
                 #ifdef TRANSPOSE
-            buffer_B[j*K_L1+k] =  B[j*lda+k];
+            buffer_B[j*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k] =  B[j*lda+k];
                 #else
-            buffer_B[k*N_L1+j] =  B[k*lda+j];
+            buffer_B[k*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j] =  B[k*lda+j];
                 #endif
         }
     
@@ -60,16 +60,16 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
            /*4 here 256/sizeof(double)/8=4 */
               for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
               {
-                  register __m256d a0x = _mm256_broadcast_sd(buffer_A+i*K_L1+k+kk);
-                  register __m256d a1x = _mm256_broadcast_sd(buffer_A+(i+1)*K_L1+k+kk);
-                  register __m256d a2x = _mm256_broadcast_sd(buffer_A+(i+2)*K_L1+k+kk);
-                  register __m256d a3x = _mm256_broadcast_sd(buffer_A+(i+3)*K_L1+k+kk);
+                  register __m256d a0x = _mm256_broadcast_sd(buffer_A+i*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1))+k+kk);
+                  register __m256d a1x = _mm256_broadcast_sd(buffer_A+(i+1)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k+kk);
+                  register __m256d a2x = _mm256_broadcast_sd(buffer_A+(i+2)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k+kk);
+                  register __m256d a3x = _mm256_broadcast_sd(buffer_A+(i+3)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k+kk);
                 
                             
                             #ifdef TRANSPOSE
-                  register __m256d b = _mm256_broadcast_sd(buffer_B+(j+kk)*K_L1+k);
+                  register __m256d b = _mm256_broadcast_sd(buffer_B+(j+kk)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k);
                             #else
-                  register __m256d b = _mm256_broadcast_sd(buffer_B+(k+kk)*N_L1+j);
+                  register __m256d b = _mm256_broadcast_sd(buffer_B+(k+kk)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j);
                             #endif
                   
                   c00_c01_c02_c03 = _mm256_fmadd_pd(a0x, b, c00_c01_c02_c03);
