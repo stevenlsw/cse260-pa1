@@ -5,7 +5,8 @@
  *    Enable user to select one problem size only via the -n option
  *    Support CBLAS interface
  */
-#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <immintrin.h>
 #include <avx2intrin.h>
 
@@ -25,8 +26,8 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N. */
 
-double *buffer_A = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
-double *buffer_B = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
+double *buffer_A = (double*) calloc(0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
+double *buffer_B = (double*) calloc(0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
 
 static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, double* B, double* C)
 {
