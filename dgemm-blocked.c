@@ -5,8 +5,7 @@
  *    Enable user to select one problem size only via the -n option
  *    Support CBLAS interface
  */
-#include <stdlib.h>
-#include <stdio.h>
+
 #include <immintrin.h>
 #include <avx2intrin.h>
 
@@ -26,11 +25,10 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N. */
 
-double *buffer_A = (double*) calloc(0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
-double *buffer_B = (double*) calloc(0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
-
 static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, double* B, double* C)
 {
+    double *buffer_A = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
+    double *buffer_B = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
     /* Matrix padding and buffering */
     for (int i = 0; i < M_L1; ++i)
         for (int k = 0; k < K_L1; ++k)
@@ -85,8 +83,8 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
           
       }
     
-    memset(buffer_A, 0, M_L1*K_L1*sizeof(double));
-    memset(buffer_B, 0, K_L1*N_L1*sizeof(double));
+    _mm_free(buffer_A);
+    _mm_free(buffer_B);
 }
 
 static void do_block_l2 (int lda, int M_L2, int N_L2, int K_L2, double* A, double* B, double* C)
