@@ -5,7 +5,7 @@
  *    Enable user to select one problem size only via the -n option
  *    Support CBLAS interface
  */
-#include <stdlib.h>
+#include <string.h>
 #include <immintrin.h>
 #include <avx2intrin.h>
 
@@ -39,10 +39,10 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
         for (int j = 0; j < N_L1; ++j)
         {
                 #ifdef TRANSPOSE
-                buffer_B[j*K_L1+k] =  B[j*lda+k];
-                    #else
+            buffer_B[j*K_L1+k] =  B[j*lda+k];
+                #else
             buffer_B[k*N_L1+j] =  B[k*lda+j];
-                    #endif
+                #endif
         }
     
   /* For each row i of A */
@@ -69,6 +69,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
                   register __m256d b = _mm256_broadcast_sd(buffer_B+(j+kk)*K_L1+k);
                             #else
                   register __m256d b = _mm256_broadcast_sd(buffer_B+(k+kk)*N_L1+j);
+                            #endif
                   
                   c00_c01_c02_c03 = _mm256_fmadd_pd(a0x, b, c00_c01_c02_c03);
                   c10_c11_c12_c13 = _mm256_fmadd_pd(a1x, b, c10_c11_c12_c13);
