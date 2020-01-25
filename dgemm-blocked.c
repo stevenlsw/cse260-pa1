@@ -31,17 +31,16 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
       /* For each column j of B */
       for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE)
       {
-                # c: AVX_BLOCK_SIZE * AVX_BLOCK_SIZE
+          /* c: AVX_BLOCK_SIZE * AVX_BLOCK_SIZE */
           register __m256 c00_c01_c02_c03 = _mm256_load_pd(C+i*lda+j);
           register __m256 c10_c11_c12_c13 = _mm256_load_pd(C+(i+1)*lda+j);
           register __m256 c20_c21_c22_c23 = _mm256_load_pd(C+(i+2)*lda+j);
           register __m256 c30_c31_c32_c33 = _mm256_load_pd(C+(i+3)*lda+j);
           for (int k = 0; k < K_L1; K+=4)
-                    # 4 here 256/sizeof(double)/8=4
+           /*4 here 256/sizeof(double)/8=4 */
           {
                 
                 #ifdef TRANSPOSE
-                     # cij += A[i*lda+k] * B[j*lda+k];
               for (int jj=0; jj<AVX_BLOCK_SIZE;jj++)
               {
                   register __m256 a0x = _mm256_broadcast_sd(A+i*lda+k+jj)
