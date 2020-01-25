@@ -47,7 +47,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
         }
     
   /* For each row i of A */
-    for (int i = 0; i < M_L1; i+=AVX_BLOCK_SIZE)
+    for (int i = 0; i < M_L1; i+=1)
       /* For each column j of B */
       for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE)
       {
