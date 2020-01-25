@@ -60,10 +60,10 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
            /*4 here 256/sizeof(double)/8=4 */
               for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
               {
-                  register __m256d a0x = _mm256_broadcast_sd(buffer_A+i*M_L1+k+kk);
-                  register __m256d a1x = _mm256_broadcast_sd(buffer_A+(i+1)*M_L1+k+kk);
-                  register __m256d a2x = _mm256_broadcast_sd(buffer_A+(i+2)*M_L1+k+kk);
-                  register __m256d a3x = _mm256_broadcast_sd(buffer_A+(i+3)*M_L1+k+kk);
+                  register __m256d a0x = _mm256_broadcast_sd(buffer_A+i*K_L1+k+kk);
+                  register __m256d a1x = _mm256_broadcast_sd(buffer_A+(i+1)*K_L1+k+kk);
+                  register __m256d a2x = _mm256_broadcast_sd(buffer_A+(i+2)*K_L1+k+kk);
+                  register __m256d a3x = _mm256_broadcast_sd(buffer_A+(i+3)*K_L1+k+kk);
                 
                             
                             #ifdef TRANSPOSE
