@@ -21,7 +21,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N. */
 
-static void do_block_l1 (int M_L1, int N_L1, int K_L1, double* A, double* B, double* C)
+static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, double* B, double* C)
 {
   /* For each row i of A */
     for (int i = 0; i < M_L1; ++i)
@@ -29,18 +29,18 @@ static void do_block_l1 (int M_L1, int N_L1, int K_L1, double* A, double* B, dou
       for (int j = 0; j < N_L1; ++j)
       {
         /* Compute C(i,j) */
-        double cij = C[i*L2_BLOCK_SIZE+j];
+        double cij = C[i*lda+j];
         for (int k = 0; k < K_L1; ++k)
   #ifdef TRANSPOSE
-      cij += A[i*L2_BLOCK_SIZE+k] * B[j*L2_BLOCK_SIZE+k];
+      cij += A[i*lda+k] * B[j*lda+k];
   #else
-      cij += A[i*L2_BLOCK_SIZE+k] * B[k*L2_BLOCK_SIZE+j];
+      cij += A[i*lda+k] * B[k*lda+j];
   #endif
-        C[i*L2_BLOCK_SIZE+j] = cij;
+        C[i*lda+j] = cij;
       }
 }
 
-static void do_block_l2 (int M_L2, int N_L2, int K_L2, double* A, double* B, double* C)
+static void do_block_l2 (int lda, int M_L2, int N_L2, int K_L2, double* A, double* B, double* C)
 {
     /* For each block-row of A */
       for (int i = 0; i < M_L2; i += L1_BLOCK_SIZE)
@@ -56,14 +56,14 @@ static void do_block_l2 (int M_L2, int N_L2, int K_L2, double* A, double* B, dou
 
         /* Perform individual block dgemm */
     #ifdef TRANSPOSE
-        do_block_l1(M_L1, N_L1, K_L1, A + i*L2_BLOCK_SIZE + k, B + j*L2_BLOCK_SIZE + k, C + i*L2_BLOCK_SIZE + j);
+        do_block_l1(lda, M_L1, N_L1, K_L1, A + i*lda + k, B + j*lda + k, C + i*lda + j);
     #else
-        do_block_l1(M_L1, N_L1, K_L1, A + i*L2_BLOCK_SIZE + k, B + k*L2_BLOCK_SIZE + j, C + i*L2_BLOCK_SIZE + j);
+        do_block_l1(lda, M_L1, N_L1, K_L1, A + i*lda + k, B + k*lda + j, C + i*lda + j);
     #endif
           }
 }
 
-static void do_block_l3 (int M_L3, int N_L3, int K_L3, double* A, double* B, double* C)
+static void do_block_l3 (int lda, int M_L3, int N_L3, int K_L3, double* A, double* B, double* C)
 {
     /* For each block-row of A */
     for (int i = 0; i < M_L3; i += L2_BLOCK_SIZE)
@@ -79,9 +79,9 @@ static void do_block_l3 (int M_L3, int N_L3, int K_L3, double* A, double* B, dou
 
       /* Perform individual block dgemm */
   #ifdef TRANSPOSE
-      do_block_l2(M_L2, N_L2, K_L2, A + i*L3_BLOCK_SIZE + k, B + j*L3_BLOCK_SIZE + k, C + i*L3_BLOCK_SIZE + j);
+      do_block_l2(lda, M_L2, N_L2, K_L2, A + i*lda + k, B + j*lda + k, C + i*lda + j);
   #else
-      do_block_l2(M_L2, N_L2, K_L2, A + i*L3_BLOCK_SIZE + k, B + k*L3_BLOCK_SIZE + j, C + i*L3_BLOCK_SIZE + j);
+      do_block_l2(lda, M_L2, N_L2, K_L2, A + i*lda + k, B + k*lda + j, C + i*lda + j);
   #endif
         }
 }
@@ -114,9 +114,9 @@ void square_dgemm (int lda, double* A, double* B, double* C)
 
 	/* Perform individual block dgemm */
 #ifdef TRANSPOSE
-	do_block_l3(M_L3, N_L3, K_L3, A + i*lda + k, B + j*lda + k, C + i*lda + j);
+	do_block_l3(lda, M_L3, N_L3, K_L3, A + i*lda + k, B + j*lda + k, C + i*lda + j);
 #else
-	do_block_l3(M_L3, N_L3, K_L3, A + i*lda + k, B + k*lda + j, C + i*lda + j);
+	do_block_l3(lda, M_L3, N_L3, K_L3, A + i*lda + k, B + k*lda + j, C + i*lda + j);
 #endif
       }
 #if TRANSPOSE
