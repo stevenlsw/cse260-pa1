@@ -5,7 +5,7 @@
  *    Enable user to select one problem size only via the -n option
  *    Support CBLAS interface
  */
-
+#include <string.h>
 #include <immintrin.h>
 #include <avx2intrin.h>
 
@@ -29,6 +29,8 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
 {
     double *buffer_A = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
     double *buffer_B = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
+    memset(buffer_A, 0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
+    memset(buffer_B, 0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
     /* Matrix padding and buffering */
     for (int i = 0; i < M_L1; ++i)
         for (int k = 0; k < K_L1; ++k)
