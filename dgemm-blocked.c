@@ -29,14 +29,14 @@ static void do_block_l1 (int M_L1, int N_L1, int K_L1, double* A, double* B, dou
       for (int j = 0; j < N_L1; ++j)
       {
         /* Compute C(i,j) */
-        double cij = C[i*M_L1+j];
+        double cij = C[i*L1_BLOCK_SIZE+j];
         for (int k = 0; k < K_L1; ++k)
   #ifdef TRANSPOSE
-      cij += A[i*M_L1+k] * B[j*K_L1+k];
+      cij += A[i*L1_BLOCK_SIZE+k] * B[j*L1_BLOCK_SIZE+k];
   #else
-      cij += A[i*M_L1+k] * B[k*K_L1+j];
+      cij += A[i*L1_BLOCK_SIZE+k] * B[k*L1_BLOCK_SIZE+j];
   #endif
-        C[i*M_L1+j] = cij;
+        C[i*L1_BLOCK_SIZE+j] = cij;
       }
 }
 
