@@ -32,9 +32,9 @@ static void do_block_l1 (int M_L1, int N_L1, int K_L1, double* A, double* B, dou
         double cij = C[i*L1_BLOCK_SIZE+j];
         for (int k = 0; k < K_L1; ++k)
   #ifdef TRANSPOSE
-      cij += A[i*L1_BLOCK_SIZE+k] * B[j*L1_BLOCK_SIZE+k];
+      cij += A[i*L2_BLOCK_SIZE+k] * B[j*L2_BLOCK_SIZE+k];
   #else
-      cij += A[i*L1_BLOCK_SIZE+k] * B[k*L1_BLOCK_SIZE+j];
+      cij += A[i*L2_BLOCK_SIZE+k] * B[k*L2_BLOCK_SIZE+j];
   #endif
         C[i*L1_BLOCK_SIZE+j] = cij;
       }
