@@ -81,6 +81,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
           __mm256_storeu_pd(C+(i+3)*lda+j, c30_c31_c32_c33);
           
       }
+}
 
 static void do_block_l2 (int lda, int M_L2, int N_L2, int K_L2, double* A, double* B, double* C)
 {
