@@ -12,7 +12,7 @@
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #if !defined(BLOCK_SIZE)
-#define L1_BLOCK_SIZE 36
+#define L1_BLOCK_SIZE 32 // divisible by AVX_BLOCK_SIZE
 #define L2_BLOCK_SIZE 104
 #define L3_BLOCK_SIZE 1144
 #define AVX_BLOCK_SIZE 8
@@ -25,7 +25,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N. */
 
-static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, double* B, double* C)
+static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* restrict A, double* restrict B, double* restrict C)
 {
 
   /* For each row i of A */
@@ -123,7 +123,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
       }
 }
 
-static void do_block_l2 (int lda, int M_L2, int N_L2, int K_L2, double* A, double* B, double* C)
+static void do_block_l2 (int lda, int M_L2, int N_L2, int K_L2, double* restrict A, double* restrict B, double* restrict C)
 {
     /* For each block-row of A */
       for (int i = 0; i < M_L2; i += L1_BLOCK_SIZE)
@@ -146,7 +146,7 @@ static void do_block_l2 (int lda, int M_L2, int N_L2, int K_L2, double* A, doubl
           }
 }
 
-static void do_block_l3 (int lda, int M_L3, int N_L3, int K_L3, double* A, double* B, double* C)
+static void do_block_l3 (int lda, int M_L3, int N_L3, int K_L3, double* restrict A, double* restrict B, double* restrict C)
 {
     /* For each block-row of A */
     for (int i = 0; i < M_L3; i += L2_BLOCK_SIZE)
@@ -173,7 +173,7 @@ static void do_block_l3 (int lda, int M_L3, int N_L3, int K_L3, double* A, doubl
  *  C := C + A * B
  * where A, B, and C are lda-by-lda matrices stored in row-major order
  * On exit, A and B maintain their input values. */  
-void square_dgemm (int lda, double* A, double* B, double* C)
+void square_dgemm (int lda, double* restrict A, double* restrict B, double* restrict C)
 {
 #ifdef TRANSPOSE
   for (int i = 0; i < lda; ++i)
