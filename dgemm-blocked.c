@@ -51,11 +51,11 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
                   register __m256d b = _mm256_loadu_pd(B+(k+kk)*lda+j);
                   /* boundary padding */
                   if (j+4>N_L1)
-                        int e = N_L1 - j;
-                        b[0] = b[0] * (e>0)
-                        b[1] = b[1] * (e>1)
-                        b[2] = b[2] * (e>2)
-                        b[3] = b[3] * (e>3)
+                      int e = N_L1 - j;
+                      b[0] = b[0] * (e>0);
+                      b[1] = b[1] * (e>1);
+                      b[2] = b[2] * (e>2);
+                      b[3] = b[3] * (e>3);
 
                   c00_c01_c02_c03 = _mm256_fmadd_pd(a0x, b, c00_c01_c02_c03);
                   c10_c11_c12_c13 = _mm256_fmadd_pd(a1x, b, c10_c11_c12_c13);
