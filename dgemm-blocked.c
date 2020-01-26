@@ -40,7 +40,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
         for (int j = 0; j < N_L1; ++j)
         {
                 #ifdef TRANSPOSE
-            buffer_B[j*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k] =  B[j*lda+k];
+            buffer_B[k*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j] =  B[j*lda+k];
                 #else
             buffer_B[k*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j] =  B[k*lda+j];
                 #endif
@@ -51,11 +51,12 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
       /* For each column j of B */
       for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE)
       {
-          /* c: AVX_BLOCK_SIZE * AVX_BLOCK_SIZE */
+          /* c: AVX_BLOCK_SIZE * 4 */
           register __m256d c00_c01_c02_c03 = _mm256_loadu_pd(C+i*lda+j);
           register __m256d c10_c11_c12_c13 = _mm256_loadu_pd(C+(i+1)*lda+j);
           register __m256d c20_c21_c22_c23 = _mm256_loadu_pd(C+(i+2)*lda+j);
           register __m256d c30_c31_c32_c33 = _mm256_loadu_pd(C+(i+3)*lda+j);
+          
           for (int k = 0; k < K_L1; k+=4)
            /*4 here 256/sizeof(double)/8=4 */
               for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
@@ -65,12 +66,8 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
                   register __m256d a2x = _mm256_broadcast_sd(buffer_A+(i+2)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k+kk);
                   register __m256d a3x = _mm256_broadcast_sd(buffer_A+(i+3)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k+kk);
                   
-                           #ifdef TRANSPOSE
-                  register __m256d b = _mm256_loadu_pd(buffer_B+(j+kk)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+k);
-                           #else
                   register __m256d b = _mm256_loadu_pd(buffer_B+(k+kk)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j);
-                           #endif
-                  
+
                   c00_c01_c02_c03 = _mm256_fmadd_pd(a0x, b, c00_c01_c02_c03);
                   c10_c11_c12_c13 = _mm256_fmadd_pd(a1x, b, c10_c11_c12_c13);
                   c20_c21_c22_c23 = _mm256_fmadd_pd(a2x, b, c20_c21_c22_c23);
