@@ -51,8 +51,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
           register __m256d c70_c71_c72_c73 = _mm256_loadu_pd(C+(i+7)*lda+j);
           register __m256d c74_c75_c76_c77 = _mm256_loadu_pd(C+(i+7)*lda+j+4);
           
-          for (int k = 0; k < K_L1; k+=4)
-           /*4 here 256/sizeof(double)/8=4 */
+          for (int k = 0; k < K_L1; k+=AVX_BLOCK_SIZE)
               for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
               {
                   register __m256d a0x = _mm256_broadcast_sd(A+i*lda+k+kk);
@@ -86,15 +85,15 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
                   c20_c21_c22_c23 = _mm256_fmadd_pd(a2x, b0123, c20_c21_c22_c23);
                   c30_c31_c32_c33 = _mm256_fmadd_pd(a3x, b0123, c30_c31_c32_c33);
                   
-                  c40_c41_c42_c43 = _mm256_fmadd_pd(a4x, b0123, c40_c41_c42_c43);
-                  c50_c51_c52_c53 = _mm256_fmadd_pd(a5x, b0123, c50_c51_c52_c53);
-                  c60_c61_c62_c63 = _mm256_fmadd_pd(a6x, b0123, c60_c61_c62_c63);
-                  c70_c71_c72_c73 = _mm256_fmadd_pd(a7x, b0123, c70_c71_c72_c73);
-                  
                   c04_c05_c06_c07 = _mm256_fmadd_pd(a0x, b4567, c04_c05_c06_c07);
                   c14_c15_c16_c17 = _mm256_fmadd_pd(a1x, b4567, c14_c15_c16_c17);
                   c24_c25_c26_c27 = _mm256_fmadd_pd(a2x, b4567, c24_c25_c26_c27);
                   c34_c35_c36_c37 = _mm256_fmadd_pd(a3x, b4567, c34_c35_c36_c37);
+                  
+                  c40_c41_c42_c43 = _mm256_fmadd_pd(a4x, b0123, c40_c41_c42_c43);
+                  c50_c51_c52_c53 = _mm256_fmadd_pd(a5x, b0123, c50_c51_c52_c53);
+                  c60_c61_c62_c63 = _mm256_fmadd_pd(a6x, b0123, c60_c61_c62_c63);
+                  c70_c71_c72_c73 = _mm256_fmadd_pd(a7x, b0123, c70_c71_c72_c73);
                   
                   c44_c45_c46_c47 = _mm256_fmadd_pd(a4x, b4567, c44_c45_c46_c47);
                   c54_c55_c56_c57 = _mm256_fmadd_pd(a5x, b4567, c54_c55_c56_c57);
