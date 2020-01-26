@@ -48,7 +48,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
                   register __m256d a2x = _mm256_broadcast_sd(A+(i+2)*lda+k+kk);
                   register __m256d a3x = _mm256_broadcast_sd(A+(i+3)*lda+k+kk);
                   
-                  register __m256d b = _mm256_loadu_pd(buffer_B+(k+kk)*lda+j);
+                  register __m256d b = _mm256_loadu_pd(B+(k+kk)*lda+j);
                   /* boundary padding */
                   if (j+4>N_L1)
                       for (int jj=N_L1-j; jj<4; jj++)
