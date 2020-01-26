@@ -59,9 +59,9 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
                   }
               
               register __m256d b00_b01_b02_b03 = _mm256_loadu_pd(B+j*lda+k);
-              register __m256d b10_b11_b12_b13 = _mm256_loadu_pd(A+(j+1)*lda+k);
-              register __m256d b20_b21_b22_b23 = _mm256_loadu_pd(A+(j+2)*lda+k);
-              register __m256d b30_b31_b32_b33 = _mm256_loadu_pd(A+(j+3)*lda+k);
+              register __m256d b10_b11_b12_b13 = _mm256_loadu_pd(B+(j+1)*lda+k);
+              register __m256d b20_b21_b22_b23 = _mm256_loadu_pd(B+(j+2)*lda+k);
+              register __m256d b30_b31_b32_b33 = _mm256_loadu_pd(B+(j+3)*lda+k);
               
               /* boundary padding */
               if (k+4>K_L1)
