@@ -40,45 +40,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
           register __m256d c30_c31_c32_c33 = _mm256_loadu_pd(C+(i+3)*lda+j);
           
           for (int k = 0; k < K_L1; k+=4)
-          {
            /*4 here 256/sizeof(double)/8=4 */
-                    #ifdef TRANSPOSE
-              register __m256d a00_a01_a02_a03 = _mm256_loadu_pd(A+i*lda+k);
-              register __m256d a10_a11_a12_a13 = _mm256_loadu_pd(A+(i+1)*lda+k);
-              register __m256d a20_a21_a22_a23 = _mm256_loadu_pd(A+(i+2)*lda+k);
-              register __m256d a30_a31_a32_a33 = _mm256_loadu_pd(A+(i+3)*lda+k);
-              
-              /* boundary padding */
-              if (k+4>K_L1)
-                  for (int kk=K_L1-k; kk<4; kk++)
-                  {
-                      a00_a01_a02_a03[kk] = 0;
-                      a10_a11_a12_a13[kk] = 0;
-                      a20_a21_a22_a23[kk] = 0;
-                      a30_a31_a32_a33[kk] = 0;
-                  }
-              
-              register __m256d b00_b01_b02_b03 = _mm256_loadu_pd(B+j*lda+k);
-              register __m256d b10_b11_b12_b13 = _mm256_loadu_pd(B+(j+1)*lda+k);
-              register __m256d b20_b21_b22_b23 = _mm256_loadu_pd(B+(j+2)*lda+k);
-              register __m256d b30_b31_b32_b33 = _mm256_loadu_pd(B+(j+3)*lda+k);
-              
-              /* boundary padding */
-              if (k+4>K_L1)
-                  for (int kk=K_L1-k; kk<4; kk++)
-                  {
-                      b00_b01_b02_b03[kk] = 0;
-                      b10_b11_b12_b13[kk] = 0;
-                      b20_b21_b22_b23[kk] = 0;
-                      b30_b31_b32_b33[kk] = 0;
-                  }
-              
-              c00_c01_c02_c03 = _mm256_fmadd_pd(a00_a01_a02_a03, b00_b01_b02_b03, c00_c01_c02_c03);
-              c10_c11_c12_c13 = _mm256_fmadd_pd(a10_a11_a12_a13, b10_b11_b12_b13, c10_c11_c12_c13);
-              c20_c21_c22_c23 = _mm256_fmadd_pd(a20_a21_a22_a23, b20_b21_b22_b23, c20_c21_c22_c23);
-              c30_c31_c32_c33 = _mm256_fmadd_pd(a30_a31_a32_a33, b30_b31_b32_b33, c30_c31_c32_c33);
-              
-                    #else
               for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
               {
                   register __m256d a0x = _mm256_broadcast_sd(A+i*lda+k+kk);
@@ -89,16 +51,18 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
                   register __m256d b = _mm256_loadu_pd(B+(k+kk)*lda+j);
                   /* boundary padding */
                   if (j+4>N_L1)
-                      for (int jj=N_L1-j; jj<4; jj++)
-                          b[jj] = 0;
+                        int e = N_L1 - j;
+                        b[0] = b[0] * (e>0)
+                        b[1] = b[1] * (e>1)
+                        b[2] = b[2] * (e>2)
+                        b[3] = b[3] * (e>3)
 
                   c00_c01_c02_c03 = _mm256_fmadd_pd(a0x, b, c00_c01_c02_c03);
                   c10_c11_c12_c13 = _mm256_fmadd_pd(a1x, b, c10_c11_c12_c13);
                   c20_c21_c22_c23 = _mm256_fmadd_pd(a2x, b, c20_c21_c22_c23);
                   c30_c31_c32_c33 = _mm256_fmadd_pd(a3x, b, c30_c31_c32_c33);
               }
-                    #endif
-          }
+
           _mm256_storeu_pd(C+i*lda+j, c00_c01_c02_c03);
           _mm256_storeu_pd(C+(i+1)*lda+j, c10_c11_c12_c13);
           _mm256_storeu_pd(C+(i+2)*lda+j, c20_c21_c22_c23);
