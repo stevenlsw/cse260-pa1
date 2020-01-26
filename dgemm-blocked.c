@@ -52,6 +52,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* restrict
           register __m256d c74_c75_c76_c77 = _mm256_loadu_pd(C+(i+7)*lda+j+4);
           
           for (int k = 0; k < K_L1; k+=AVX_BLOCK_SIZE)
+          {
               for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
               {
                   register __m256d a0x = _mm256_broadcast_sd(A+i*lda+k+kk);
@@ -63,6 +64,10 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* restrict
                   register __m256d a5x = _mm256_broadcast_sd(A+(i+5)*lda+k+kk);
                   register __m256d a6x = _mm256_broadcast_sd(A+(i+6)*lda+k+kk);
                   register __m256d a7x = _mm256_broadcast_sd(A+(i+7)*lda+k+kk);
+                  
+                  /* prefetch next row of B*/
+                  __builtin_prefetch(B+(k+kk+1)*lda+j);
+                  __builtin_prefetch(B+(k+kk+1)*lda+j+4);
                   
                   register __m256d b0123 = _mm256_loadu_pd(B+(k+kk)*lda+j);
                   register __m256d b4567 = _mm256_loadu_pd(B+(k+kk)*lda+j+4);
@@ -101,6 +106,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* restrict
                   c74_c75_c76_c77 = _mm256_fmadd_pd(a7x, b4567, c74_c75_c76_c77);
                   
               }
+          }
 
           _mm256_storeu_pd(C+i*lda+j, c00_c01_c02_c03);
           _mm256_storeu_pd(C+i*lda+j+4, c04_c05_c06_c07);
