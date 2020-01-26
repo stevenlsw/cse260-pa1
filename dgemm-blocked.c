@@ -52,10 +52,10 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
       for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE)
       {
           /* c: AVX_BLOCK_SIZE * AVX_BLOCK_SIZE */
-          register __m256d c00_c01_c02_c03 = _mm256_loadu_pd(buffer_C+i*lda+j);
-          register __m256d c10_c11_c12_c13 = _mm256_loadu_pd(buffer_C+(i+1)*lda+j);
-          register __m256d c20_c21_c22_c23 = _mm256_loadu_pd(buffer_C+(i+2)*lda+j);
-          register __m256d c30_c31_c32_c33 = _mm256_loadu_pd(buffer_C+(i+3)*lda+j);
+          register __m256d c00_c01_c02_c03 = _mm256_loadu_pd(C+i*lda+j);
+          register __m256d c10_c11_c12_c13 = _mm256_loadu_pd(C+(i+1)*lda+j);
+          register __m256d c20_c21_c22_c23 = _mm256_loadu_pd(C+(i+2)*lda+j);
+          register __m256d c30_c31_c32_c33 = _mm256_loadu_pd(C+(i+3)*lda+j);
           for (int k = 0; k < K_L1; k+=4)
            /*4 here 256/sizeof(double)/8=4 */
               for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
