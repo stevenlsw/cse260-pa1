@@ -29,8 +29,10 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
 {
     double *buffer_A = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
     double *buffer_B = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
+    double *buffer_C = (double*) _mm_malloc((L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double), 64);
     memset(buffer_A, 0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
     memset(buffer_B, 0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
+    memset(buffer_C, 0, (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * (L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1) * sizeof(double));
     /* Matrix padding and buffering */
     for (int i = 0; i < M_L1; ++i)
         for (int k = 0; k < K_L1; ++k)
@@ -46,16 +48,20 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
                 #endif
         }
     
+    for (int i = 0; i < M_L1; ++i)
+        for (int j = 0; j < N_L1; ++j)
+            buffer_C[i*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j] = C[i*lda+j];
+    
   /* For each row i of A */
-    for (int i = 0; i < M_L1; i+=1)
+    for (int i = 0; i < M_L1; i+=AVX_BLOCK_SIZE)
       /* For each column j of B */
       for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE)
       {
           /* c: AVX_BLOCK_SIZE * AVX_BLOCK_SIZE */
-          register __m256d c00_c01_c02_c03 = _mm256_loadu_pd(C+i*lda+j);
-          register __m256d c10_c11_c12_c13 = _mm256_loadu_pd(C+(i+1)*lda+j);
-          register __m256d c20_c21_c22_c23 = _mm256_loadu_pd(C+(i+2)*lda+j);
-          register __m256d c30_c31_c32_c33 = _mm256_loadu_pd(C+(i+3)*lda+j);
+          register __m256d c00_c01_c02_c03 = _mm256_loadu_pd(buffer_C+i*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j);
+          register __m256d c10_c11_c12_c13 = _mm256_loadu_pd(buffer_C+(i+1)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j);
+          register __m256d c20_c21_c22_c23 = _mm256_loadu_pd(buffer_C+(i+2)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j);
+          register __m256d c30_c31_c32_c33 = _mm256_loadu_pd(buffer_C+(i+3)*(L1_BLOCK_SIZE+AVX_BLOCK_SIZE-1)+j);
           for (int k = 0; k < K_L1; k+=4)
            /*4 here 256/sizeof(double)/8=4 */
               for (int kk=0; kk<AVX_BLOCK_SIZE;kk++)
@@ -87,6 +93,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
     
     _mm_free(buffer_A);
     _mm_free(buffer_B);
+    _mm_free(buffer_C);
 }
 
 static void do_block_l2 (int lda, int M_L2, int N_L2, int K_L2, double* A, double* B, double* C)
