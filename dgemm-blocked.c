@@ -119,12 +119,14 @@ static void do_block_l3 (int buffer_size, int M_L3, int N_L3, int K_L3, double* 
         {
             int N_L2 = min (L2_BLOCK_SIZE, N_L3-j);
         /* Accumulate block dgemms into block of C */
-            for (int k = 0; k < K_L3; k += L2_BLOCK_SIZE)
+            for (int k = 0; k < K_L3; k += 2 * L2_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
-                int K_L2 = min (L2_BLOCK_SIZE, K_L3-k);
+                int K_L2_0 = min (L2_BLOCK_SIZE, K_L3-k);
+                int K_L2_1 = min (L2_BLOCK_SIZE, K_L3-k-L2_BLOCK_SIZE);
                 /* Perform individual block dgemm */
-                do_block_l2(buffer_size, M_L2, N_L2, K_L2, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
+                do_block_l2(buffer_size, M_L2, N_L2, K_L2_0, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
+                do_block_l2(buffer_size, M_L2, N_L2, K_L2_1, buffer_A + i*buffer_size + k+L2_BLOCK_SIZE, buffer_B + (k+L2_BLOCK_SIZE)*buffer_size + j, buffer_C + i*buffer_size + j);
             }
         }
     }
@@ -160,14 +162,12 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
         {
             int N_L3 = min (L3_BLOCK_SIZE, buffer_size-j);
         /* Accumulate block dgemms into block of C */
-            for (int k = 0; k < lda; k += 2 * L3_BLOCK_SIZE)
+            for (int k = 0; k < lda; k += L3_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
                 int K_L3 = min (L3_BLOCK_SIZE, lda-k);
                 /* Perform individual block dgemm */
                 do_block_l3(buffer_size, M_L3, N_L3, K_L3, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
-                int K_L3_next = min(L3_BLOCK_SIZE, lda-(k+L3_BLOCK_SIZE));
-                do_block_l3(buffer_size, M_L3, N_L3, K_L3_next, buffer_A + i*buffer_size + k+L3_BLOCK_SIZE, buffer_B + (k+L3_BLOCK_SIZE)*buffer_size + j, buffer_C + i*buffer_size + j);
                 
             }
         }
