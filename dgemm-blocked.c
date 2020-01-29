@@ -129,7 +129,7 @@ static void do_block_l3 (int lda, int M_L3, int N_L3, int K_L3, double* A, doubl
                 do_block_l2(lda, M_L2, N_L2, K_L2, A + i*lda + k, B + k*lda + j, C + i*lda + j);
 #endif
             }
-
+}
 /* This routine performs a dgemm operation
  *  C := C + A * B
  * where A, B, and C are lda-by-lda matrices stored in row-major order
