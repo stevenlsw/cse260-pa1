@@ -119,14 +119,12 @@ static void do_block_l3 (int buffer_size, int M_L3, int N_L3, int K_L3, double* 
         {
             int N_L2 = min (L2_BLOCK_SIZE, N_L3-j);
         /* Accumulate block dgemms into block of C */
-            for (int k = 0; k < K_L3; k += 2 * L2_BLOCK_SIZE)
+            for (int k = 0; k < K_L3; k += L2_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
                 int K_L2_0 = min (L2_BLOCK_SIZE, K_L3-k);
-                int K_L2_1 = min (L2_BLOCK_SIZE, K_L3-k-L2_BLOCK_SIZE);
                 /* Perform individual block dgemm */
                 do_block_l2(buffer_size, M_L2, N_L2, K_L2_0, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
-                do_block_l2(buffer_size, M_L2, N_L2, K_L2_1, buffer_A + i*buffer_size + k+L2_BLOCK_SIZE, buffer_B + (k+L2_BLOCK_SIZE)*buffer_size + j, buffer_C + i*buffer_size + j);
             }
         }
     }
