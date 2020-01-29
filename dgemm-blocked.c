@@ -50,8 +50,6 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                     register __m256d a0x = _mm256_broadcast_sd(buffer_A+i*buffer_size+k);
                     register __m256d a1x = _mm256_broadcast_sd(buffer_A+(i+1)*buffer_size+k);
                     register __m256d a2x = _mm256_broadcast_sd(buffer_A+(i+2)*buffer_size+k);
-                
-                    _mm_prefetch((char *)&buffer_B+(k+1)*buffer_size+j, _MM_HINT_T1);
                     
                     register __m256d b0123 = _mm256_load_pd(buffer_B+k*buffer_size+j);
                     register __m256d b4567 = _mm256_loadu_pd(buffer_B+k*buffer_size+j+4);
@@ -162,12 +160,15 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
         {
             int N_L3 = min (L3_BLOCK_SIZE, buffer_size-j);
         /* Accumulate block dgemms into block of C */
-            for (int k = 0; k < lda; k += L3_BLOCK_SIZE)
+            for (int k = 0; k < lda; k += 2 * L3_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
                 int K_L3 = min (L3_BLOCK_SIZE, lda-k);
                 /* Perform individual block dgemm */
                 do_block_l3(buffer_size, M_L3, N_L3, K_L3, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
+                int K_L3_next = min(L3_BLOCK_SIZE, lda-(k+L3_BLOCK_SIZE));
+                do_block_l3(buffer_size, M_L3, N_L3, K_L3_next, buffer_A + i*buffer_size + k+L3_BLOCK_SIZE, buffer_B + (k+L3_BLOCK_SIZE)*buffer_size + j, buffer_C + i*buffer_size + j);
+                
             }
         }
     }
