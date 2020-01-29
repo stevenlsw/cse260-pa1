@@ -148,6 +148,7 @@ void square_dgemm (int lda, double* A, double* B, double* C)
     /* Matrix padding and buffering */
     int SIZE_H = lda + AVX_BLOCK_SIZE_H - lda % AVX_BLOCK_SIZE_H;
     int SIZE_W = lda + AVX_BLOCK_SIZE_W - lda % AVX_BLOCK_SIZE_W;
+    
     double *buffer_A = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 64);
     double *buffer_B = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 64);
     double *buffer_C = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 64);
@@ -176,9 +177,9 @@ void square_dgemm (int lda, double* A, double* B, double* C)
                 
                 /* Perform individual block dgemm */
 #ifdef TRANSPOSE
-                do_block_l3(SIZE, M_L3, N_L3, K_L3, buffer_A + i*SIZE_W + k, buffer_B + j*SIZE_H + k, buffer_C + i*SIZE_W + j);
+                do_block_l3(lda, M_L3, N_L3, K_L3, buffer_A + i*SIZE_W + k, buffer_B + j*SIZE_H + k, buffer_C + i*SIZE_W + j);
 #else
-                do_block_l3(SIZE, M_L3, N_L3, K_L3, buffer_A + i*SIZE_W + k, buffer_B + k*SIZE_H + j, buffer_C + i*SIZE_W + j);
+                do_block_l3(lda, M_L3, N_L3, K_L3, buffer_A + i*SIZE_W + k, buffer_B + k*SIZE_H + j, buffer_C + i*SIZE_W + j);
 #endif
             }
     
