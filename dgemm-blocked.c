@@ -169,7 +169,7 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
     /* For each block-column of B */
         for (int j = 0; j < SIZE; j += L3_BLOCK_SIZE)
         /* Accumulate block dgemms into block of C */
-            for (int k = 0; k < SIZE; k += L3_BLOCK_SIZE)
+            for (int k = 0; k < lda; k += L3_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
                 int M_L3 = min (L3_BLOCK_SIZE, SIZE-i);
