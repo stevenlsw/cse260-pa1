@@ -100,11 +100,8 @@ static void do_block_l2 (int buffer_size, int M_L2, int N_L2, int K_L2, double* 
                 int K_L1 = min (L1_BLOCK_SIZE, K_L2-k);
                 
                 /* Perform individual block dgemm */
-#ifdef TRANSPOSE
-                do_block_l1(buffer_size, M_L1, N_L1, K_L1, buffer_A + i*buffer_size + k, buffer_B + j*buffer_size + k, buffer_C + i*buffer_size + j);
-#else
                 do_block_l1(buffer_size, M_L1, N_L1, K_L1, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
-#endif
+
             }
 }
 
@@ -123,11 +120,7 @@ static void do_block_l3 (int buffer_size, int M_L3, int N_L3, int K_L3, double* 
                 int K_L2 = min (L2_BLOCK_SIZE, K_L3-k);
                 
                 /* Perform individual block dgemm */
-#ifdef TRANSPOSE
-                do_block_l2(buffer_size, M_L2, N_L2, K_L2, buffer_A + i*buffer_size + k, buffer_B + j*buffer_size + k, buffer_C + i*buffer_size + j);
-#else
                 do_block_l2(buffer_size, M_L2, N_L2, K_L2, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
-#endif
             }
 }
 
@@ -137,21 +130,12 @@ static void do_block_l3 (int buffer_size, int M_L3, int N_L3, int K_L3, double* 
  * On exit, A and B maintain their input values. */
 void square_dgemm (int lda, double* restrict A, double* restrict B, double* restrict C)
 {
-#ifdef TRANSPOSE
-    for (int i = 0; i < lda; ++i)
-        for (int j = i+1; j < lda; ++j) {
-            double t = B[i*lda+j];
-            B[i*lda+j] = B[j*lda+i];
-            B[j*lda+i] = t;
-        }
-#endif
-    
     /* Matrix padding and buffering */
     int  buffer_size = lda + AVX_BLOCK_SIZE_W - lda % AVX_BLOCK_SIZE_W;
     
-    double *buffer_A = (double*) _mm_malloc(buffer_size * buffer_size * sizeof(double), 256);
-    double *buffer_B = (double*) _mm_malloc(buffer_size * buffer_size * sizeof(double), 256);
-    double *buffer_C = (double*) _mm_malloc(buffer_size * buffer_size * sizeof(double), 256);
+    double *buffer_A = (double*) _mm_malloc(buffer_size * buffer_size * sizeof(double), 1024);
+    double *buffer_B = (double*) _mm_malloc(buffer_size * buffer_size * sizeof(double), 1024);
+    double *buffer_C = (double*) _mm_malloc(buffer_size * buffer_size * sizeof(double), 1024);
    
     
     for (int i = 0; i < lda; ++i)
@@ -174,11 +158,7 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
                 int K_L3 = min (L3_BLOCK_SIZE, lda-k);
                 
                 /* Perform individual block dgemm */
-#ifdef TRANSPOSE
-                do_block_l3(buffer_size, M_L3, N_L3, K_L3, buffer_A + i*buffer_size + k, buffer_B + j*buffer_size + k, buffer_C + i*buffer_size + j);
-#else
                 do_block_l3(buffer_size, M_L3, N_L3, K_L3, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
-#endif
             }
     
     for (int i = 0; i < lda; ++i)
@@ -188,13 +168,5 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
     _mm_free(buffer_A);
     _mm_free(buffer_B);
     _mm_free(buffer_C);
-    
-#if TRANSPOSE
-    for (int i = 0; i < lda; ++i)
-        for (int j = i+1; j < lda; ++j) {
-            double t = B[i*lda+j];
-            B[i*lda+j] = B[j*lda+i];
-            B[j*lda+i] = t;
-        }
-#endif
+
 }
