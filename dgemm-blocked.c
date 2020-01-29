@@ -51,10 +51,7 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                     register __m256d a1x = _mm256_broadcast_sd(buffer_A+(i+1)*buffer_size+k);
                     register __m256d a2x = _mm256_broadcast_sd(buffer_A+(i+2)*buffer_size+k);
                 
-                    /* prefetch */
                     __builtin_prefetch(buffer_B+(k+1)*buffer_size+j);
-                    __builtin_prefetch(buffer_B+(k+1)*buffer_size+j+4);
-                    __builtin_prefetch(buffer_B+(k+1)*buffer_size+j+8);
                     
                     register __m256d b0123 = _mm256_load_pd(buffer_B+k*buffer_size+j);
                     register __m256d b4567 = _mm256_loadu_pd(buffer_B+k*buffer_size+j+4);
