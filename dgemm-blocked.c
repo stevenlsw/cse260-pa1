@@ -150,7 +150,7 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
     int SIZE_H = lda + AVX_BLOCK_SIZE_H - lda % AVX_BLOCK_SIZE_H;
     int SIZE_W = lda + AVX_BLOCK_SIZE_W - lda % AVX_BLOCK_SIZE_W;
     
-    double buffer_A = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 12);
+    double *buffer_A = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 12);
     double *buffer_B = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 12);
     double *buffer_C = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 12);
    
