@@ -134,9 +134,9 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
     int  buffer_size = lda + AVX_BLOCK_SIZE_W - lda % AVX_BLOCK_SIZE_W;
     
     double* buffer = (double*) _mm_malloc(3 * buffer_size * buffer_size * sizeof(double), 64*buffer_size);
-    double *buffer_A = buffer
-    double *buffer_B = buffer + buffer_size * buffer_size
-    double *buffer_C = buffer_B + buffer_size * buffer_size
+    double *buffer_A = buffer;
+    double *buffer_B = buffer + buffer_size * buffer_size;
+    double *buffer_C = buffer_B + buffer_size * buffer_size;
    
     
     for (int i = 0; i < lda; ++i)
