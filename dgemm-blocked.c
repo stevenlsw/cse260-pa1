@@ -89,16 +89,15 @@ static void do_block_l2 (int buffer_size, int M_L2, int N_L2, int K_L2, double* 
 {
     /* For each block-row of A */
     for (int i = 0; i < M_L2; i += L1_BLOCK_SIZE)
+        int M_L1 = min (L1_BLOCK_SIZE, M_L2-i);
     /* For each block-column of B */
         for (int j = 0; j < N_L2; j += L1_BLOCK_SIZE)
+            int N_L1 = min (L1_BLOCK_SIZE, N_L2-j);
         /* Accumulate block dgemms into block of C */
             for (int k = 0; k < K_L2; k += L1_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
-                int M_L1 = min (L1_BLOCK_SIZE, M_L2-i);
-                int N_L1 = min (L1_BLOCK_SIZE, N_L2-j);
                 int K_L1 = min (L1_BLOCK_SIZE, K_L2-k);
-                
                 /* Perform individual block dgemm */
                 do_block_l1(buffer_size, M_L1, N_L1, K_L1, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
 
@@ -109,16 +108,15 @@ static void do_block_l3 (int buffer_size, int M_L3, int N_L3, int K_L3, double* 
 {
     /* For each block-row of A */
     for (int i = 0; i < M_L3; i += L2_BLOCK_SIZE)
+        int M_L2 = min (L2_BLOCK_SIZE, M_L3-i);
     /* For each block-column of B */
         for (int j = 0; j < N_L3; j += L2_BLOCK_SIZE)
+            int N_L2 = min (L2_BLOCK_SIZE, N_L3-j);
         /* Accumulate block dgemms into block of C */
             for (int k = 0; k < K_L3; k += L2_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
-                int M_L2 = min (L2_BLOCK_SIZE, M_L3-i);
-                int N_L2 = min (L2_BLOCK_SIZE, N_L3-j);
                 int K_L2 = min (L2_BLOCK_SIZE, K_L3-k);
-                
                 /* Perform individual block dgemm */
                 do_block_l2(buffer_size, M_L2, N_L2, K_L2, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
             }
@@ -147,16 +145,15 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
     
     /* For each block-row of A */
     for (int i = 0; i < lda; i += L3_BLOCK_SIZE)
+        int M_L3 = min (L3_BLOCK_SIZE, buffer_size-i);
     /* For each block-column of B */
         for (int j = 0; j < lda; j += L3_BLOCK_SIZE)
+            int N_L3 = min (L3_BLOCK_SIZE, buffer_size-j);
         /* Accumulate block dgemms into block of C */
             for (int k = 0; k < lda; k += L3_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
-                int M_L3 = min (L3_BLOCK_SIZE, buffer_size-i);
-                int N_L3 = min (L3_BLOCK_SIZE, buffer_size-j);
                 int K_L3 = min (L3_BLOCK_SIZE, lda-k);
-                
                 /* Perform individual block dgemm */
                 do_block_l3(buffer_size, M_L3, N_L3, K_L3, buffer_A + i*buffer_size + k, buffer_B + k*buffer_size + j, buffer_C + i*buffer_size + j);
             }
