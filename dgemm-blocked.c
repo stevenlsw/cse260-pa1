@@ -15,8 +15,8 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 
 #if !defined(BLOCK_SIZE)
 #define L1_BLOCK_SIZE 36
-#define L2_BLOCK_SIZE 104
-#define L3_BLOCK_SIZE 1144
+#define L2_BLOCK_SIZE 108
+#define L3_BLOCK_SIZE 1140
 #define AVX_BLOCK_SIZE_W 12
 #define AVX_BLOCK_SIZE_H 3
 #endif
@@ -34,7 +34,7 @@ static void do_block_l1 (int lda, int M_L1, int N_L1, int K_L1, double* A, doubl
     /* For each column j of B */
         for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE_W)
         {
-                  # AVX_BLOCK_SIZE_H * AVX_BLOCK_SIZE_W
+                  /* AVX_BLOCK_SIZE_H * AVX_BLOCK_SIZE_W */
             register __m256d c00_c01_c02_c03 = _mm256_load_pd(C+i*L1_BLOCK_SIZE+j);
             register __m256d c04_c05_c06_c07 = _mm256_loadu_pd(C+i*L1_BLOCK_SIZE+j+4);
             register __m256d c08_c09_c00_c01 = _mm256_loadu_pd(C+i*L1_BLOCK_SIZE+j+8);
@@ -146,44 +146,45 @@ void square_dgemm (int lda, double* A, double* B, double* C)
 #endif
     
     /* Matrix padding and buffering */
-    int SIZE = lda + AVX_BLOCK_SIZE - lda % AVX_BLOCK_SIZE;
-    double *buffer_A = (double*) _mm_malloc(SIZE * SIZE * sizeof(double), 64);
-    double *buffer_B = (double*) _mm_malloc(SIZE * SIZE * sizeof(double), 64);
-    double *buffer_C = (double*) _mm_malloc(SIZE * SIZE * sizeof(double), 64);
-    memset(buffer_A, 0, SIZE * SIZE * sizeof(double));
-    memset(buffer_B, 0, SIZE * SIZE * sizeof(double));
-    memset(buffer_C, 0, SIZE * SIZE * sizeof(double));
+    int SIZE_H = lda + AVX_BLOCK_SIZE_H - lda % AVX_BLOCK_SIZE_H;
+    int SIZE_W = lda + AVX_BLOCK_SIZE_W - lda % AVX_BLOCK_SIZE_W;
+    double *buffer_A = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 64);
+    double *buffer_B = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 64);
+    double *buffer_C = (double*) _mm_malloc(SIZE_H * SIZE_W * sizeof(double), 64);
+    memset(buffer_A, 0, SIZE_H * SIZE_W * sizeof(double));
+    memset(buffer_B, 0, SIZE_H * SIZE_W * sizeof(double));
+    memset(buffer_C, 0, SIZE_H * SIZE_W * sizeof(double));
     
     for (int i = 0; i < lda; ++i)
         for (int j = 0; j < lda; ++j) {
-            buffer_A[i*SIZE+j] = A[i*lda+j];
-            buffer_B[i*SIZE+j] = B[i*lda+j];
-            buffer_C[i*SIZE+j] = C[i*lda+j];
+            buffer_A[i*SIZE_W+j] = A[i*lda+j];
+            buffer_B[i*SIZE_W+j] = B[i*lda+j];
+            buffer_C[i*SIZE_W+j] = C[i*lda+j];
         }
     
     /* For each block-row of A */
-    for (int i = 0; i < SIZE; i += L3_BLOCK_SIZE)
+    for (int i = 0; i < SIZE_H; i += L3_BLOCK_SIZE)
     /* For each block-column of B */
-        for (int j = 0; j < SIZE; j += L3_BLOCK_SIZE)
+        for (int j = 0; j < SIZE_W; j += L3_BLOCK_SIZE)
         /* Accumulate block dgemms into block of C */
-            for (int k = 0; k < SIZE; k += L3_BLOCK_SIZE)
+            for (int k = 0; k < lda; k += L3_BLOCK_SIZE)
             {
                 /* Correct block dimensions if block "goes off edge of" the matrix */
-                int M_L3 = min (L3_BLOCK_SIZE, SIZE-i);
-                int N_L3 = min (L3_BLOCK_SIZE, SIZE-j);
-                int K_L3 = min (L3_BLOCK_SIZE, SIZE-k);
+                int M_L3 = min (L3_BLOCK_SIZE, SIZE_H-i);
+                int N_L3 = min (L3_BLOCK_SIZE, SIZE_W-j);
+                int K_L3 = min (L3_BLOCK_SIZE, lda-k);
                 
                 /* Perform individual block dgemm */
 #ifdef TRANSPOSE
-                do_block_l3(SIZE, M_L3, N_L3, K_L3, buffer_A + i*SIZE + k, buffer_B + j*SIZE + k, buffer_C + i*SIZE + j);
+                do_block_l3(SIZE, M_L3, N_L3, K_L3, buffer_A + i*SIZE_W + k, buffer_B + j*SIZE_H + k, buffer_C + i*SIZE_W + j);
 #else
-                do_block_l3(SIZE, M_L3, N_L3, K_L3, buffer_A + i*SIZE + k, buffer_B + k*SIZE + j, buffer_C + i*SIZE + j);
+                do_block_l3(SIZE, M_L3, N_L3, K_L3, buffer_A + i*SIZE_W + k, buffer_B + k*SIZE_H + j, buffer_C + i*SIZE_W + j);
 #endif
             }
     
     for (int i = 0; i < lda; ++i)
         for (int j = 0; j < lda; ++j)
-            C[i*lda+j] = buffer_C[i*SIZE+j];
+            C[i*lda+j] = buffer_C[i*SIZE_W+j];
     
     _mm_free(buffer_A);
     _mm_free(buffer_B);
