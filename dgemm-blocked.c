@@ -148,17 +148,17 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
         for (int j = 0; j < lda; ++j) {
             buffer_A[i*buffer_size+j] = A[i*lda+j];
             buffer_B[i*buffer_size+j] = B[i*lda+j];
-            buffer_C[i*buffer_size+j] = C[i*lda+j];
+            buffer_C[i*buffer_size+j] = 0;
         }
     
     /* For each block-row of A */
     for (int i = 0; i < lda; i += L3_BLOCK_SIZE)
     {
-        int M_L3 = min (L3_BLOCK_SIZE, buffer_size-i);
+        int M_L3 = min (L3_BLOCK_SIZE, lda-i);
     /* For each block-column of B */
         for (int j = 0; j < lda; j += L3_BLOCK_SIZE)
         {
-            int N_L3 = min (L3_BLOCK_SIZE, buffer_size-j);
+            int N_L3 = min (L3_BLOCK_SIZE, lda-j);
         /* Accumulate block dgemms into block of C */
             for (int k = 0; k < lda; k += L3_BLOCK_SIZE)
             {
