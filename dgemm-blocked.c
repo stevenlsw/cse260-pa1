@@ -36,14 +36,14 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
         {
                   /* AVX_BLOCK_SIZE_H * AVX_BLOCK_SIZE_W */
             register __m256d c00_c01_c02_c03 = _mm256_load_pd(buffer_C+i*buffer_size+j);
-            register __m256d c04_c05_c06_c07 = _mm256_loadu_pd(buffer_C+i*buffer_size+j+4);
-            register __m256d c08_c09_c00_c01 = _mm256_loadu_pd(buffer_C+i*buffer_size+j+8);
+            register __m256d c04_c05_c06_c07 = _mm256_load_pd(buffer_C+i*buffer_size+j+4);
+            register __m256d c08_c09_c00_c01 = _mm256_load_pd(buffer_C+i*buffer_size+j+8);
             register __m256d c10_c11_c12_c13 = _mm256_load_pd(buffer_C+(i+1)*buffer_size+j);
-            register __m256d c14_c15_c16_c17 = _mm256_loadu_pd(buffer_C+(i+1)*buffer_size+j+4);
-            register __m256d c18_c19_c10_c11 = _mm256_loadu_pd(buffer_C+(i+1)*buffer_size+j+8);
+            register __m256d c14_c15_c16_c17 = _mm256_load_pd(buffer_C+(i+1)*buffer_size+j+4);
+            register __m256d c18_c19_c10_c11 = _mm256_load_pd(buffer_C+(i+1)*buffer_size+j+8);
             register __m256d c20_c21_c22_c23 = _mm256_load_pd(buffer_C+(i+2)*buffer_size+j);
-            register __m256d c24_c25_c26_c27 = _mm256_loadu_pd(buffer_C+(i+2)*buffer_size+j+4);
-            register __m256d c28_c29_c20_c21 = _mm256_loadu_pd(buffer_C+(i+2)*buffer_size+j+8);
+            register __m256d c24_c25_c26_c27 = _mm256_load_pd(buffer_C+(i+2)*buffer_size+j+4);
+            register __m256d c28_c29_c20_c21 = _mm256_load_pd(buffer_C+(i+2)*buffer_size+j+8);
             
             for (int k = 0; k < K_L1; k+=1)
             {
@@ -52,8 +52,8 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                     register __m256d a2x = _mm256_broadcast_sd(buffer_A+(i+2)*buffer_size+k);
                     
                     register __m256d b0123 = _mm256_load_pd(buffer_B+k*buffer_size+j);
-                    register __m256d b4567 = _mm256_loadu_pd(buffer_B+k*buffer_size+j+4);
-                    register __m256d b8901 = _mm256_loadu_pd(buffer_B+k*buffer_size+j+8);
+                    register __m256d b4567 = _mm256_load_pd(buffer_B+k*buffer_size+j+4);
+                    register __m256d b8901 = _mm256_load_pd(buffer_B+k*buffer_size+j+8);
                     
                     c00_c01_c02_c03 = _mm256_fmadd_pd(a0x, b0123, c00_c01_c02_c03);
                     c10_c11_c12_c13 = _mm256_fmadd_pd(a1x, b0123, c10_c11_c12_c13);
