@@ -63,10 +63,8 @@ ifeq ($(NO_BLAS), 1)
     CFLAGS += -DNO_BLAS
 endif
 
-ifeq ($(AVX512), 1)
-    C++FLAGS += -march=native
-    CFLAGS += -march=native
-endif
+C++FLAGS += -march=native
+CFLAGS += -march=native
 
 OPTIMIZATION = $(MY_OPT)
 
@@ -78,7 +76,7 @@ UTIL   = wall_time.o cmdLine.o
 default : all
 
 .PHONY : all
-all : clean $(targets)
+all : clean $(targets); echo $(CFLAGS)
 
 benchmark-naive : benchmark.o dgemm-naive.o  $(UTIL)
 	$(CC) -o $@ $^ $(LDLIBS)
