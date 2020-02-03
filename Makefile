@@ -76,7 +76,7 @@ UTIL   = wall_time.o cmdLine.o
 default : all
 
 .PHONY : all
-all : clean $(targets); echo $(CFLAGS)
+all : clean $(targets)
 
 benchmark-naive : benchmark.o dgemm-naive.o  $(UTIL)
 	$(CC) -o $@ $^ $(LDLIBS)
