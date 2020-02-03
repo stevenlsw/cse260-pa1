@@ -13,7 +13,13 @@
 
 const char* dgemm_desc = "Simple blocked dgemm.";
 
-#if !defined(BLOCK_SIZE)
+#if defined(AVX512)
+#define L1_BLOCK_SIZE 20
+#define L2_BLOCK_SIZE 200
+#define L3_BLOCK_SIZE 1240
+#define AVX_BLOCK_SIZE_W 20
+#define AVX_BLOCK_SIZE_H 4
+#else
 #define L1_BLOCK_SIZE 36
 #define L2_BLOCK_SIZE 108
 #define L3_BLOCK_SIZE 1140
@@ -34,6 +40,99 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
     /* For each column j of B */
         for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE_W)
         {
+                #ifdef AVX512
+            /* AVX_BLOCK_SIZE_H * AVX_BLOCK_SIZE_W */
+               register __m512d c00 = _mm512_load_pd(buffer_C+i*buffer_size+j);
+               register __m512d c08 = _mm512_load_pd(buffer_C+i*buffer_size+j+8);
+               register __m512d c016 = _mm512_load_pd(buffer_C+i*buffer_size+j+16);
+               register __m512d c024 = _mm512_load_pd(buffer_C+i*buffer_size+j+24);
+               register __m512d c032 = _mm512_load_pd(buffer_C+i*buffer_size+j+32);
+               
+               register __m512d c10 = _mm512_load_pd(buffer_C+(i+1)*buffer_size+j);
+               register __m512d c18 = _mm512_load_pd(buffer_C+(i+1)*buffer_size+j+8);
+               register __m512d c116 = _mm512_load_pd(buffer_C+(i+1)*buffer_size+j+16);
+               register __m512d c124 = _mm512_load_pd(buffer_C+(i+1)*buffer_size+j+24);
+               register __m512d c132 = _mm512_load_pd(buffer_C+(i+1)*buffer_size+j+32);
+            
+               register __m512d c20 = _mm512_load_pd(buffer_C+(i+2)*buffer_size+j);
+               register __m512d c28 = _mm512_load_pd(buffer_C+(i+2)*buffer_size+j+8);
+               register __m512d c216 = _mm512_load_pd(buffer_C+(i+2)*buffer_size+j+16);
+               register __m512d c224 = _mm512_load_pd(buffer_C+(i+2)*buffer_size+j+24);
+               register __m512d c232 = _mm512_load_pd(buffer_C+(i+2)*buffer_size+j+32);
+                
+            
+               register __m512d c30 = _mm512_load_pd(buffer_C+(i+3)*buffer_size+j);
+               register __m512d c38 = _mm512_load_pd(buffer_C+(i+3)*buffer_size+j+8);
+               register __m512d c316 = _mm512_load_pd(buffer_C+(i+3)*buffer_size+j+16);
+               register __m512d c324 = _mm512_load_pd(buffer_C+(i+3)*buffer_size+j+24);
+               register __m512d c332 = _mm512_load_pd(buffer_C+(i+3)*buffer_size+j+32);
+               
+               for (int k = 0; k < K_L1; k+=1)
+               {
+                       register __m512d a0x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+i*buffer_size+k));
+                       register __m512d a1x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+(i+1)*buffer_size+k));
+                       register __m512d a2x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+(i+2)*buffer_size+k));
+                       register __m512d a3x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+(i+3)*buffer_size+k));
+                       
+                       register __m512d b0 = _mm512_load_pd(buffer_B+k*buffer_size+j);
+                       register __m512d b8 = _mm512_load_pd(buffer_B+k*buffer_size+j+8);
+                       register __m512d b16 = _mm512_load_pd(buffer_B+k*buffer_size+j+16);
+                       register __m512d b24 = _mm512_load_pd(buffer_B+k*buffer_size+j+24);
+                       register __m512d b32 = _mm512_load_pd(buffer_B+k*buffer_size+j+32);
+                       
+                       c00 = _mm512_fmadd_pd(a0x, b0, c00);
+                       c10 = _mm512_fmadd_pd(a1x, b0, c10);
+                       c20 = _mm512_fmadd_pd(a2x, b0, c20);
+                       c30 = _mm512_fmadd_pd(a3x, b0, c30);
+                       
+                       c08 = _mm512_fmadd_pd(a0x, b8, c08);
+                       c18 = _mm512_fmadd_pd(a1x, b8, c18);
+                       c28 = _mm512_fmadd_pd(a2x, b8, c28);
+                       c38 = _mm512_fmadd_pd(a3x, b8, c38);
+                   
+                       c016 = _mm512_fmadd_pd(a0x, b16, c016);
+                       c116 = _mm512_fmadd_pd(a1x, b16, c116);
+                       c216 = _mm512_fmadd_pd(a2x, b16, c216);
+                       c316 = _mm512_fmadd_pd(a3x, b16, c316);
+                   
+                       c024 = _mm512_fmadd_pd(a0x, b24, c024);
+                       c124 = _mm512_fmadd_pd(a1x, b24, c124);
+                       c224 = _mm512_fmadd_pd(a2x, b24, c224);
+                       c324 = _mm512_fmadd_pd(a3x, b24, c324);
+                     
+                       c032 = _mm512_fmadd_pd(a0x, b32, c032);
+                       c132 = _mm512_fmadd_pd(a1x, b32, c132);
+                       c232 = _mm512_fmadd_pd(a2x, b32, c232);
+                       c332 = _mm512_fmadd_pd(a3x, b32, c332);
+                   
+               }
+               
+               _mm512_store_pd(buffer_C+i*buffer_size+j, c00);
+               _mm512_store_pd(buffer_C+(i+1)*buffer_size+j, c10);
+               _mm512_store_pd(buffer_C+(i+2)*buffer_size+j, c20);
+               _mm512_store_pd(buffer_C+(i+3)*buffer_size+j, c30);
+               
+               _mm512_store_pd(buffer_C+i*buffer_size+j+8, c08);
+               _mm512_store_pd(buffer_C+(i+1)*buffer_size+j+8, c18);
+               _mm512_store_pd(buffer_C+(i+2)*buffer_size+j+8, c28);
+               _mm512_store_pd(buffer_C+(i+3)*buffer_size+j+8, c38);
+               
+               _mm512_store_pd(buffer_C+i*buffer_size+j+16, c016);
+               _mm512_store_pd(buffer_C+(i+1)*buffer_size+j+16, c116);
+               _mm512_store_pd(buffer_C+(i+2)*buffer_size+j+16, c216);
+               _mm512_store_pd(buffer_C+(i+3)*buffer_size+j+16, c316);
+            
+               _mm512_store_pd(buffer_C+i*buffer_size+j+24, c024);
+               _mm512_store_pd(buffer_C+(i+1)*buffer_size+j+24, c124);
+               _mm512_store_pd(buffer_C+(i+2)*buffer_size+j+24, c224);
+               _mm512_store_pd(buffer_C+(i+3)*buffer_size+j+24, c324);
+             
+               _mm512_store_pd(buffer_C+i*buffer_size+j+32, c032);
+               _mm512_store_pd(buffer_C+(i+1)*buffer_size+j+32, c132);
+               _mm512_store_pd(buffer_C+(i+2)*buffer_size+j+32, c232);
+               _mm512_store_pd(buffer_C+(i+3)*buffer_size+j+32, c332);
+            
+                #else
                   /* AVX_BLOCK_SIZE_H * AVX_BLOCK_SIZE_W */
             register __m256d c00_c01_c02_c03 = _mm256_load_pd(buffer_C+i*buffer_size+j);
             register __m256d c04_c05_c06_c07 = _mm256_load_pd(buffer_C+i*buffer_size+j+4);
@@ -81,7 +180,7 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
             _mm256_store_pd(buffer_C+i*buffer_size+j+8, c08_c09_c00_c01);
             _mm256_store_pd(buffer_C+(i+1)*buffer_size+j+8, c18_c19_c10_c11);
             _mm256_store_pd(buffer_C+(i+2)*buffer_size+j+8, c28_c29_c20_c21);
-            
+                #endif
         }
 }
 
@@ -148,7 +247,7 @@ void square_dgemm (int lda, double* restrict A, double* restrict B, double* rest
         for (int j = 0; j < lda; ++j) {
             buffer_A[i*buffer_size+j] = A[i*lda+j];
             buffer_B[i*buffer_size+j] = B[i*lda+j];
-            buffer_C[i*buffer_size+j] = 0;
+            buffer_C[i*buffer_size+j] = 0.0;
         }
     
     /* For each block-row of A */

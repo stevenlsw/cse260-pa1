@@ -63,6 +63,10 @@ ifeq ($(NO_BLAS), 1)
     CFLAGS += -DNO_BLAS
 endif
 
+ifeq ($(AVX512), 1)
+    C++FLAGS += -march=native
+    CFLAGS += -march=native
+endif
 
 OPTIMIZATION = $(MY_OPT)
 
