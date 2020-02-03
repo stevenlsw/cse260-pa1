@@ -15,10 +15,10 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 
 #if defined(AVX512)
 #define L1_BLOCK_SIZE 32
-#define L2_BLOCK_SIZE 208
-#define L3_BLOCK_SIZE 1248
+#define L2_BLOCK_SIZE 160
+#define L3_BLOCK_SIZE 1200
 #define AVX_BLOCK_SIZE_W 16
-#define AVX_BLOCK_SIZE_H 8
+#define AVX_BLOCK_SIZE_H 10
 #else
 #define L1_BLOCK_SIZE 36
 #define L2_BLOCK_SIZE 108
@@ -35,12 +35,14 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 
 static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* buffer_A, double* buffer_B, double* buffer_C)
 {
+      #ifdef AVX512
     /* For each row i of A */
-    for (int i = 0; i < M_L1; i+=AVX_BLOCK_SIZE_H)
+    for (int i = 0; i < M_L1 - M_L1 % AVX_BLOCK_SIZE_H; i+=AVX_BLOCK_SIZE_H)
     /* For each column j of B */
+    {
         for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE_W)
         {
-                #ifdef AVX512
+               
             /* AVX_BLOCK_SIZE_H * AVX_BLOCK_SIZE_W */
                 register __m512d c00 = _mm512_load_pd(buffer_C+i*buffer_size+j);
                 register __m512d c08 = _mm512_load_pd(buffer_C+i*buffer_size+j+8);
@@ -66,6 +68,12 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                 register __m512d c70 = _mm512_load_pd(buffer_C+(i+7)*buffer_size+j);
                 register __m512d c78 = _mm512_load_pd(buffer_C+(i+7)*buffer_size+j+8);
             
+                register __m512d c80 = _mm512_load_pd(buffer_C+(i+8)*buffer_size+j);
+                register __m512d c88 = _mm512_load_pd(buffer_C+(i+8)*buffer_size+j+8);
+                
+                register __m512d c90 = _mm512_load_pd(buffer_C+(i+9)*buffer_size+j);
+                register __m512d c98 = _mm512_load_pd(buffer_C+(i+9)*buffer_size+j+8);
+            
                for (int k = 0; k < K_L1; k+=1)
                {
                        register __m512d a0x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+i*buffer_size+k));
@@ -76,7 +84,9 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                        register __m512d a5x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+(i+5)*buffer_size+k));
                        register __m512d a6x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+(i+6)*buffer_size+k));
                        register __m512d a7x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+(i+7)*buffer_size+k));
-                      
+                       register __m512d a8x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+(i+8)*buffer_size+k));
+                       register __m512d a9x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+(i+9)*buffer_size+k));
+                   
                        register __m512d b0 = _mm512_load_pd(buffer_B+k*buffer_size+j);
                        register __m512d b8 = _mm512_load_pd(buffer_B+k*buffer_size+j+8);
                        
@@ -88,6 +98,8 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                        c50 = _mm512_fmadd_pd(a5x, b0, c50);
                        c60 = _mm512_fmadd_pd(a6x, b0, c60);
                        c70 = _mm512_fmadd_pd(a7x, b0, c70);
+                       c80 = _mm512_fmadd_pd(a8x, b0, c80);
+                       c90 = _mm512_fmadd_pd(a9x, b0, c90);
                        
                        c08 = _mm512_fmadd_pd(a0x, b8, c08);
                        c18 = _mm512_fmadd_pd(a1x, b8, c18);
@@ -97,7 +109,8 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                        c58 = _mm512_fmadd_pd(a5x, b8, c58);
                        c68 = _mm512_fmadd_pd(a6x, b8, c68);
                        c78 = _mm512_fmadd_pd(a7x, b8, c78);
-                   
+                       c88 = _mm512_fmadd_pd(a8x, b8, c88);
+                       c98 = _mm512_fmadd_pd(a9x, b8, c98);
                    
                }
                
@@ -109,6 +122,8 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                _mm512_store_pd(buffer_C+(i+5)*buffer_size+j, c50);
                _mm512_store_pd(buffer_C+(i+6)*buffer_size+j, c60);
                _mm512_store_pd(buffer_C+(i+7)*buffer_size+j, c70);
+               _mm512_store_pd(buffer_C+(i+8)*buffer_size+j, c80);
+               _mm512_store_pd(buffer_C+(i+9)*buffer_size+j, c90);
                
                _mm512_store_pd(buffer_C+i*buffer_size+j+8, c08);
                _mm512_store_pd(buffer_C+(i+1)*buffer_size+j+8, c18);
@@ -118,8 +133,42 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
                _mm512_store_pd(buffer_C+(i+5)*buffer_size+j+8, c58);
                _mm512_store_pd(buffer_C+(i+6)*buffer_size+j+8, c68);
                _mm512_store_pd(buffer_C+(i+7)*buffer_size+j+8, c78);
-
-                #else
+               _mm512_store_pd(buffer_C+(i+8)*buffer_size+j+8, c88);
+               _mm512_store_pd(buffer_C+(i+9)*buffer_size+j+8, c98);
+            
+            }
+    }
+    for (int i = M_L1 - M_L1 % AVX_BLOCK_SIZE_H; i< M_L1; i+=1)
+    /* For each column j of B */
+    {
+       for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE_W)
+       {
+              
+           /* AVX_BLOCK_SIZE_H * AVX_BLOCK_SIZE_W */
+               register __m512d c00 = _mm512_load_pd(buffer_C+i*buffer_size+j);
+               register __m512d c08 = _mm512_load_pd(buffer_C+i*buffer_size+j+8);
+              
+              for (int k = 0; k < K_L1; k+=1)
+              {
+                      register __m512d a0x = _mm512_broadcast_f64x4(_mm256_broadcast_sd(buffer_A+i*buffer_size+k));
+    
+                      register __m512d b0 = _mm512_load_pd(buffer_B+k*buffer_size+j);
+                      register __m512d b8 = _mm512_load_pd(buffer_B+k*buffer_size+j+8);
+                      
+                      c00 = _mm512_fmadd_pd(a0x, b0, c00);
+                      c08 = _mm512_fmadd_pd(a0x, b8, c08);
+              }
+              
+              _mm512_store_pd(buffer_C+i*buffer_size+j, c00);
+              _mm512_store_pd(buffer_C+i*buffer_size+j+8, c08);
+       }
+    }
+        #else
+       /* For each row i of A */
+       for (int i = 0; i < M_L1 - M_L1 % AVX_BLOCK_SIZE_H; i+=AVX_BLOCK_SIZE_H)
+       /* For each column j of B */
+           for (int j = 0; j < N_L1; j+=AVX_BLOCK_SIZE_W)
+           {
                   /* AVX_BLOCK_SIZE_H * AVX_BLOCK_SIZE_W */
             register __m256d c00_c01_c02_c03 = _mm256_load_pd(buffer_C+i*buffer_size+j);
             register __m256d c04_c05_c06_c07 = _mm256_load_pd(buffer_C+i*buffer_size+j+4);
@@ -167,8 +216,8 @@ static void do_block_l1 (int buffer_size, int M_L1, int N_L1, int K_L1, double* 
             _mm256_store_pd(buffer_C+i*buffer_size+j+8, c08_c09_c00_c01);
             _mm256_store_pd(buffer_C+(i+1)*buffer_size+j+8, c18_c19_c10_c11);
             _mm256_store_pd(buffer_C+(i+2)*buffer_size+j+8, c28_c29_c20_c21);
-                #endif
         }
+    #endif
 }
 
 static void do_block_l2 (int buffer_size, int M_L2, int N_L2, int K_L2, double* restrict buffer_A, double* restrict buffer_B, double* restrict buffer_C)
