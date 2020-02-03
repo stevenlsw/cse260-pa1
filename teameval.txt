@@ -13,32 +13,50 @@ If you worked alone leave column B blank
 
 (1) List the names of your team members:
 
-A:
+A: Shaowei Liu
 
  
-B:
+B: Shuhao Chang
 
  
  
 (2) Estimate how much time each team member devoted to this project, in HOURS.
 
   	                        A 	       B
-meetings 	  	  	 
-coding 	  	  	 
-writeup 	  	  	 
-planning (alone) 	  	  	 
-total (including meetings) 	  	  	 
+meetings 	  	  	8              8
+coding 	  	  	        28             28
+writeup 	  	  	8              8 
+planning (alone) 	  	6              6  	 
+total (including meetings) 	50  	       50	 
 
 
 (3) Discuss the following.
 (a) If you worked in a team, what were the major responsibilities
     of each team member?
+    A: 3 level blocking, AVX2 vectorization, Loop Unrolling, Alignment
+    B: Non-sqaure configuration, Matrix padding, Buffer & cache tuning
+
 (b) Did you complete the assignment?
+    Yes
+
 (c) What were your major strengths and weaknesses in doing this
     assignment (individually or in a team)?
     If in a team, also discuss how your team worked together.
-(d) What  lessons did you learn from these events.
+    Strengths: Strong math abilities to derive theoretical results
+    Weaknesses: No sufficient time to further fine tune the results
+    Teamwork: Meet often and discuss about better optimizations
+
+(d) What lessons did you learn from these events.
+    Better to begin earlier.
+
 (e) If in a team, whether and how you plan to change the way
     your work together .
+    No
+
 (f) Anything else that comes to mind.
+    No
+
 (g) What suggestions do you have to improve this assignment?
+    Better clarify some requirements in the report.
+
+

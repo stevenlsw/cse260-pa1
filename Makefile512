@@ -63,6 +63,8 @@ ifeq ($(NO_BLAS), 1)
     CFLAGS += -DNO_BLAS
 endif
 
+C++FLAGS += -march=native
+CFLAGS += -march=native
 
 OPTIMIZATION = $(MY_OPT)
 
